@@ -16,7 +16,6 @@ export function GameCreatePage() {
               name: roomName,
             }),
           }).then(() => {
-            JoinPusherChannel(roomName);
             history.push(`/game-${roomName}`);
           });
         }}
@@ -24,7 +23,12 @@ export function GameCreatePage() {
         <div className="form-group row pb-3">
           <label className="col-sm-3 col-form-label">Room name:</label>
           <div className="col-sm-6">
-            <input type="text" name="name" className="form-control" />
+            <input
+              type="text"
+              name="name"
+              className="form-control"
+              autoComplete="off"
+            />
           </div>
         </div>
         <button type="submit" className="btn btn-success">

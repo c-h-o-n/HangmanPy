@@ -43,6 +43,7 @@ export function Login() {
                 name="username"
                 className="form-control"
                 placeholder="username"
+                autoComplete="off"
               />
             </div>
             <div className="form-group">
