@@ -6,8 +6,10 @@ from flask import Flask, render_template, request, jsonify, redirect, json
 
 app = Flask(__name__)
 
+gameInstances = {}
 
-testPlayer = None
+
+username = ''
 
 
 pusher_client = pusher.Pusher(
@@ -18,40 +20,51 @@ pusher_client = pusher.Pusher(
     ssl=True
 )
 
-username = ''
+
+@app.route('/create-game-<gameId>', methods=['POST'])
+def createGame(gameId):
+    gameInstances[gameId] = Hangman(12, 'noodles')
+    return ''
 
 
-@app.route('/')
-def index():
-    return render_template('index.html')
-
-
-@app.route('/play/state', methods=['POST'])
-def getGameState():
-    print('lefutottam')
+@app.route('/game-<gameId>/state')
+def getGameState(gameId):
+    print(gameInstances)
     return jsonify({
-        'lives': testPlayer.getLives(),
-        'currentState': testPlayer.getCurrentWord()
+        'lives': gameInstances[gameId].getLives(),
+        'currentState': gameInstances[gameId].getCurrentWord()
     })
 
 
-@app.route('/play/guess', methods=['POST'])
-def guess():
-    testPlayer.play(request.json.get('guess'))
-    print('guessed char:', request.json.get('guess'))
-    pusher_client.trigger('presence-global-channel',
-                          'my-event', {
-                              'currentState': testPlayer.getCurrentWord()
-                          })
+@ app.route('/rooms')
+def getRooms():
+    global gameInstances
+    if gameInstances == {}:
+        gameIds = list(pusher_client.channels_info(
+            u"presence-", [u'user_count'])['channels'].keys())
+        for gameId in gameIds:
+            gameId = gameId[gameId.index('-')+1:]
+            gameInstances[gameId] = Hangman(1, 'noodles')
+        print(gameInstances)
+    return pusher_client.channels_info(u"presence-", [u'user_count'])['channels']
+
+
+@ app.route('/game-<gameId>/guess', methods=['POST'])
+def guess(gameId):
+    guessedChar = request.get_json('guess')['guess']
+    gameInstances[gameId].play(guessedChar)
+    print('guessed char:', guessedChar)
+
+    pusher_client.trigger(
+        f'presence-{gameId}', 'update-event', {'message': 'Someone guessed'})
     return jsonify({
-        'lives': testPlayer.getLives(),
-        'currentState': testPlayer.getCurrentWord()
+        'lives': gameInstances[gameId].getLives(),
+        'currentState': gameInstances[gameId].getCurrentWord()
     })
 
 
-@app.route('/play/restart', methods=['POST'])
-def restart():
-    global testPlayer
+@ app.route('/game-<gameId>/restart')
+def restart(gameId):
     testPlayer = Hangman(14, 'nodles')
     pusher_client.trigger('presence-global-channel',
                           'my-event', {
@@ -63,29 +76,19 @@ def restart():
     })
 
 
-@app.route('/login', methods=['POST'])
+@ app.route('/login', methods=['POST'])
 def login():
     try:
         global username
-        username = request.json.get('username')
-        global testPlayer
-        if testPlayer is None:
-            testPlayer = Hangman(14, 'nodles')
+        username = request.get_json('username')['username']
         return jsonify({'result': 'success'})
     except Exception as e:
         print(e)
         return jsonify({'result': 'failure'})
 
 
-@app.route('/play', methods=['POST', 'GET'])
-def play():
-
-    return render_template('play.html', username=username, player=testPlayer)
-
-
-@app.route("/pusher/auth", methods=['POST'])
+@ app.route("/pusher/auth", methods=['POST'])
 def pusher_authentication():
-    print('new user: ', username)
     auth = pusher_client.authenticate(
         channel=request.form['channel_name'],
         socket_id=request.form['socket_id'],
@@ -99,14 +102,9 @@ def pusher_authentication():
     return json.dumps(auth)
 
 
-@app.route('/lobby', methods=['POST'])
-def lobby():
-    return render_template('lobby.html')
-
-
-# if __name__ == '__main__':
-#     app.debug = True
-#     app.run()
+if __name__ == '__main__':
+    app.debug = True
+    app.run()
 
 
 username = ''
