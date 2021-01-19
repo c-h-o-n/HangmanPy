@@ -15,7 +15,6 @@ cd root/backend/
 ```
 sudo pip install virtualenv
 python3 -m venv venv
-
 ```
 
 _On Mac_
@@ -40,6 +39,7 @@ flask run
 cd root/frontend/
 ```
 
-`npm install`
-
-`npm start`
+```
+npm install
+npm start
+```
