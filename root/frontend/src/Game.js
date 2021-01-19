@@ -54,16 +54,16 @@ export function Game(props) {
           type="text"
           name="guessChar"
           placeholder="guess..."
-          autocomplete="off"
-          maxlength="1"
-          autofocus
+          autoComplete="off"
+          maxLength="1"
+          autoFocus
           required
         />
         <button
           className="btn btn-dark"
           type="submit"
           name="forwardBtn"
-          autofocus="autofocus"
+          autoFocus="autofocus"
           //   onClick={() => setGuessing(true)}
         >
           Guess
